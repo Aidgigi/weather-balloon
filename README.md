@@ -5,8 +5,8 @@ This repository exists for me to what I learn while developing the hardware and 
 The software on the other hand, doesn't really work at all for anything but debug. As of May 19th, I am still waiting for the radios to arrive and therefore haven't bothered with communication code. As I make progress on the code, I will push updates.
 
 ## To-Do
-- [] Finish communication code
-- [] Run range tests
-- [] Finish up circuits and assemble payload
-- [] Figure out wtf to do for video
-- [] Launch this mf
+- [ ] Finish communication code
+- [ ] Run range tests
+- [ ] Finish up circuits and assemble payload
+- [ ] Figure out wtf to do for video
+- [ ] Launch this mf
