@@ -1,5 +1,4 @@
 // imports
-#include <LoRa.h>
 #include <TinyGPSPlus.h>
 #include <SoftwareSerial.h>
 #include <HardwareSerial.h>
@@ -15,6 +14,12 @@
 
 #define TINY_GSM_MODEM_SIM800
 #include <TinyGSM.h>
+
+#define E220_30
+#define FREQUENCY_915
+#define POWER_30
+
+#include "LoRa_E22.h"
 
 long time_offset  = -25200;
 
@@ -34,7 +39,8 @@ static const uint32_t LoRaBaudRate = 9600;
 static const uint32_t LoRaFreq = 915E6;
 
 // vars
-double lat, lng, elv, temp, pressure, hum, alt;
+long lat, lng, elv;
+double temp, pressure, hum, alt;
 double gyrox, gyroy, gyroz, accx, accy, accz;
 bool gpsReady;
 int satcount;
@@ -44,10 +50,12 @@ TinyGPSPlus gps;
 Adafruit_BME280 bme;  // temp/pressure/hum sensor
 Adafruit_MPU6050 mpu; // imu
 
-AsyncTimer t, z;
+AsyncTimer t, z, tSync;
+
+LoRa_E22 lora(&Serial2);
 
 //serial ports
-HardwareSerial GPSSerial(2);
+HardwareSerial GPSSerial(1);
 //HardwareSerial LRSerial(1);
 //HardwareSerial SDSerial(2);
 
@@ -56,6 +64,8 @@ HardwareSerial GPSSerial(2);
 // time stuff
 byte last_second, Second, Minute, Hour, Day, Month;
 int Year;
+
+bool timeSetInt = false;
 
 
 
@@ -89,6 +99,7 @@ int state = -1; // start the state at -1, if setup fails and state is still -1, 
 void setup() {
   Serial.begin(9600);
   GPSSerial.begin(GPSBaudRate, SERIAL_8N1, GPSRXPin, GPSTXPin);
+  lora.begin();
   //LRSerial.begin(LoRaBaudRate, SERIal_8N1, LoRaRXPin, LoRaTXPin);
   bme.begin(0x76);
   mpu.begin();
@@ -118,7 +129,8 @@ void setup() {
 
   state = 0;
   t.setInterval(LogTelemetry, 50);
-  z.setInterval(test, 100);
+  z.setInterval(SendTelemetry, 10000);
+  tSync.setInterval(SyncTime, 300000);
 }
 
 void LogTelemetry()
@@ -151,9 +163,7 @@ void loop() {
       UpdateGPS();
     }
 
-  adjustTime(time_offset);
-  z.handle();
-
+  
   if (!gpsReady)
   {
     Serial.println("Waiting for GPS lock...");
@@ -161,24 +171,42 @@ void loop() {
     return;
   }
 
+  if (!timeSetInt)
+  {
+    setTime(Hour, Minute, Second, Day, Month, Year);
+    adjustTime(time_offset);
+    timeSetInt = true;
+  }
     
   UpdateBME();
   UpdateMPU();
 
   t.handle();
+  z.handle();
+  tSync.handle();
 }
 
 
 
 // communication methods
-bool LoraInit()
+void SendTelemetry()
 {
-  LoRa.setPins();
-  return false;
+  String timo = (String)hour() + ":" + (String)minute() + ":" + (String)second();
+  String gpso = "G " + (String)lat + " " + (String)lng + " " + (String)elv;
+  String tmpo = "T " + (String)temp + " " + (String)pressure + " " + (String)hum + " " + (String)alt;
+  String mpuo = "M " + (String)gyrox + " " + (String)gyroy + " " + (String)gyroz;
+
+  String n = "\n";
+  String comb = n + timo + n + gpso + n + tmpo + n + mpuo;
+  ResponseStatus rs = lora.sendMessage(comb);
+  Serial.println(rs.getResponseDescription());
 }
 
-
-
+void SyncTime()
+{
+  setTime(Hour, Minute, Second, Day, Month, Year);
+  adjustTime(time_offset);
+}
 
 // update sensor stuff, this is stored in some global vars
 void UpdateGPS()
@@ -202,8 +230,6 @@ void UpdateGPS()
   Day = gps.date.day();
   Month = gps.date.month();
   Year = gps.date.year();
-
-  setTime(Hour, Minute, Second, Day, Month, Year);
 }
 
 void UpdateBME()
