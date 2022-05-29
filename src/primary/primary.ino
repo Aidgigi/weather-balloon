@@ -11,13 +11,14 @@
 #include <Adafruit_MPU6050.h>
 #include <AsyncTimer.h>
 #include <TimeLib.h>
+//#include <Cape.h>
 
 #define TINY_GSM_MODEM_SIM800
 #include <TinyGSM.h>
 
-#define E220_30
+#define E22_30
 #define FREQUENCY_915
-#define POWER_30
+//#define POWER_30
 
 #include "LoRa_E22.h"
 
@@ -39,11 +40,13 @@ static const uint32_t LoRaBaudRate = 9600;
 static const uint32_t LoRaFreq = 915E6;
 
 // vars
-long lat, lng, elv;
+double lat, lng, elv;
 double temp, pressure, hum, alt;
 double gyrox, gyroy, gyroz, accx, accy, accz;
 bool gpsReady;
 int satcount;
+
+bool loraReady = false;
 
 // object defs
 TinyGPSPlus gps;
@@ -58,6 +61,11 @@ LoRa_E22 lora(&Serial2);
 HardwareSerial GPSSerial(1);
 //HardwareSerial LRSerial(1);
 //HardwareSerial SDSerial(2);
+
+
+// encryption stuff
+//unsigned char key[] = "blahblahblah";
+//Cape cape(key, 20);
 
 
 
@@ -129,7 +137,7 @@ void setup() {
 
   state = 0;
   t.setInterval(LogTelemetry, 50);
-  z.setInterval(SendTelemetry, 10000);
+  z.setInterval(SendTelemetry, 500);
   tSync.setInterval(SyncTime, 300000);
 }
 
@@ -138,7 +146,7 @@ void LogTelemetry()
   if(gpsReady)
   {
     String timeOut = (String)month() + "/" + (String)day() + "/" + (String)year() + "  " + (String)hour() + ":" + (String)minute() + ":" + (String)second();
-    String gpsOut = timeOut + "  --  Latitude " + (String)lat + ", Longitude: " + (String)lng + ", Elevation: " + (String)elv + ", Links: " + (String)satcount + "\n";
+    String gpsOut = timeOut + "  --  Latitude " + String(lat,6) + ", Longitude: " + String(lng,6) + ", Elevation: " + String(elv,1) + ", Links: " + (String)satcount + "\n";
     Serial.println(timeOut);
     appendFile(SD, "/gps_data.txt", gpsOut.c_str());
   }
@@ -157,6 +165,9 @@ void test()
 }
 
 void loop() {
+  if (!loraReady)
+    LoraConfig();
+  
   while (GPSSerial.available() > 0)
     if (gps.encode(GPSSerial.read()))
     {
@@ -191,15 +202,61 @@ void loop() {
 // communication methods
 void SendTelemetry()
 {
+  // generating the strings
+  // these need to be moved elsewhere
   String timo = (String)hour() + ":" + (String)minute() + ":" + (String)second();
-  String gpso = "G " + (String)lat + " " + (String)lng + " " + (String)elv;
+  String gpso = "G " + String(lat,6) + " " + String(lng,6) + " " + String(elv,1);
   String tmpo = "T " + (String)temp + " " + (String)pressure + " " + (String)hum + " " + (String)alt;
   String mpuo = "M " + (String)gyrox + " " + (String)gyroy + " " + (String)gyroz;
-
+ 
   String n = "\n";
   String comb = n + timo + n + gpso + n + tmpo + n + mpuo;
+
+//  // encrypting the string
+//  // also could use being moved
+//  int strLength = comb.length();
+//  char sourceBuffer[strLength];
+//  comb.toCharArray(sourceBuffer, strLength);
+//  unsigned char encrOut[strLength + 1];
+  
   ResponseStatus rs = lora.sendMessage(comb);
   Serial.println(rs.getResponseDescription());
+  Serial.println("Transmitted");
+}
+
+void LoraConfig()
+{
+  // configing the module
+  ResponseStructContainer c = lora.getConfiguration();
+  Configuration configuration = *(Configuration*) c.data;
+
+  configuration.ADDL = 0x03;
+  configuration.ADDH = 0x00;
+
+  configuration.CHAN = 23;
+
+  configuration.SPED.uartBaudRate = UART_BPS_9600;
+  configuration.SPED.airDataRate = AIR_DATA_RATE_010_24;
+  configuration.SPED.uartParity = MODE_00_8N1;
+
+  configuration.OPTION.subPacketSetting = SPS_240_00;
+  configuration.OPTION.RSSIAmbientNoise = RSSI_AMBIENT_NOISE_DISABLED;
+  configuration.OPTION.transmissionPower = POWER_30;
+  
+  configuration.TRANSMISSION_MODE.enableRSSI = RSSI_ENABLED;
+  configuration.TRANSMISSION_MODE.fixedTransmission = FT_TRANSPARENT_TRANSMISSION;
+  configuration.TRANSMISSION_MODE.enableLBT = LBT_DISABLED;
+  configuration.TRANSMISSION_MODE.WORPeriod = WOR_2000_011;
+  
+  lora.setConfiguration(configuration, WRITE_CFG_PWR_DWN_SAVE); // set config
+  lora.setConfiguration(configuration, WRITE_CFG_PWR_DWN_SAVE);
+
+  // test config
+  c = lora.getConfiguration();
+  configuration = *(Configuration*) c.data;
+  Serial.println(configuration.OPTION.transmissionPower);       
+
+  loraReady = true;
 }
 
 void SyncTime()
