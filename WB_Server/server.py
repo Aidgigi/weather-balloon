@@ -6,7 +6,7 @@ from prom_server import observe_payload, start_server, observe_rssi
 
 print([comport.device for comport in serial.tools.list_ports.comports()])
 
-PORT = "/dev/cu.usbserial-A10M58RQ"
+PORT = "/dev/ttyUSB0"
 
 webhook_url = "https://discord.com/api/webhooks/1046204968971022346/B3S8yd6HqeaZAUVU9dkwyHTj5jLvlJSkW71mR-Q55n0wRcEQrBhNo2fY_HHVxRspXNmm"
 message_buffer = []
