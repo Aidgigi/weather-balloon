@@ -1,10 +1,5 @@
 import serial
 import serial.tools.list_ports
-import requests
-from pykafka import KafkaClient
-import json
-from datetime import datetime
-import uuid
 import time
 
 from prom_server import observe_payload, start_server, observe_rssi
