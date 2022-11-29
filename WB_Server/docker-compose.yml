@@ -3,18 +3,13 @@ version: "3.8"
 volumes:
  prometheus_data: {}
 
-networks:
-  mon: {}
-
 services:
   graf:
     image: grafana/grafana
     container_name: graf
     restart: always
     ports:
-      - 3000
-    networks:
-      - mon
+      - "3000:3000"
   
   prom:
     image: prom/prometheus:latest
@@ -26,8 +21,6 @@ services:
     command:
       - '--config.file=/etc/prometheus/prometheus.yml'
     ports:
-      - 9090
-    networks:
-      - mon
+      - "9090:9090"
 
 
