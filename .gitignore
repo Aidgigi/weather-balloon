@@ -1,1 +1,7 @@
 .DS_Store
+
+WB_Server/venv/
+
+.vscode/
+
+WB_Server/__pycache__/
