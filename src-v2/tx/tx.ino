@@ -287,7 +287,7 @@ void SendTelemetry() {
   strcat(payload, weather_buffer);
   // power
   char power_buffer[128];
-  sprintf(power_buffer, "|16:{}|17:{}|18:{}|19:{}|20:{}|21:{}", main_voltage_array, main_current_array, main_power_array, tx_voltage_array, tx_current_array, tx_power_array);
+  sprintf(power_buffer, "|16:{%s}|17:{%s}|18:{%s}|19:{%s}|20:{%s}|21:{%s}", main_voltage_array, main_current_array, main_power_array, tx_voltage_array, tx_current_array, tx_power_array);
   strcat(payload, power_buffer);
 
   Radio.println(payload);
