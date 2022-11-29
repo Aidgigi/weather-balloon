@@ -1,8 +1,5 @@
 version: "3.8"
 
-networks:
-  monitoring: {}
-
 volumes:
  prometheus_data: {}
 
@@ -13,8 +10,6 @@ services:
     restart: always
     ports:
       - 3000
-    networks:
-      - mon
   
   prom:
     image: prom/prometheus:latest
@@ -27,6 +22,5 @@ services:
       - '--config.file=/etc/prometheus/prometheus.yml'
     ports:
       - 9090
-    networks:
-      - mon
+
 
