@@ -1,0 +1,23 @@
+Data payload
+
+Time,Lat,Lng,Alt1,Speed,Course,Sats,AngleX,AngleY,AngleZ,Intemp,Outtemp,Pressure,Humidity,Alt2,MV,MI,MP,TV,TI,TP
+|1:{<time>}|,2:{<lat>}|,....
+
+
+Attitude log
+
+Time,AccX,AccY,AccZ,GyroX,GyroY,GyroZ,AngleX,AngleY,AngleZ,InternalTemp
+
+
+Position log
+
+Time,Lat,Lng,Alt,Speed,Course,Sats
+
+
+Weather log
+
+Time,Temp,Pres,Hum,Alt
+
+Power log
+
+Time,Battery,V,I,P

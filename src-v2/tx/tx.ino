@@ -272,7 +272,7 @@ void SendTelemetry() {
   // time formatting
   char time_buffer[16];
   GetTime(time_buffer);
-  sprintf(payload, "1:{%02d}", time_buffer);
+  sprintf(payload, "1:{%s}", time_buffer);
   // location formatting
   char loc_buffer[128];
   sprintf(loc_buffer, "|2:{%s}|3:{%s}|4:{%s}|5:{%s}|6:{%s}|7:{%i}", lat_array, lng_array, alt_array, spd_array, crs_array, sats);
@@ -349,8 +349,8 @@ void LogPower() {
 
 // converts all current telemetry to chars
 void TelToChars() {
-  dtostrf(lat, 9, 6, lat_array);
-  dtostrf(lng, 9, 6, lng_array);
+  dtostrf(lat, 0, 6, lat_array);
+  dtostrf(lng, 0, 6, lng_array);
   dtostrf(gpsAlt, 0, 2, alt_array);
   dtostrf(speed, 0, 2, spd_array);
   dtostrf(course, 0, 1, crs_array);
@@ -371,30 +371,38 @@ void TelToChars() {
   dtostrf(humidity, 0, 3, hu_array);
   dtostrf(baroAlt, 0, 2, b_alt_array);
 
-  dtostrf(v_main, 0, 2, main_voltage_array);
-  dtostrf(i_main, 0, 2, main_current_array);
-  dtostrf(p_main, 0, 2, main_power_array);
-  dtostrf(v_tx, 0, 2, tx_voltage_array);
-  dtostrf(i_tx, 0, 2, tx_current_array);
-  dtostrf(p_tx, 0, 2, tx_power_array);
+  dtostrf(v_main, 1, 2, main_voltage_array);
+  dtostrf(i_main, 1, 2, main_current_array);
+  dtostrf(p_main, 1, 2, main_power_array);
+  dtostrf(v_tx, 1, 2, tx_voltage_array);
+  dtostrf(i_tx, 1, 2, tx_current_array);
+  dtostrf(p_tx, 1, 2, tx_power_array);
 }
 
 void GetTime(char* outBuffer) {
+  memset(outBuffer, 0, sizeof(outBuffer));
   sprintf(outBuffer, "%02d:%02d:%02d",  hour(), minute(), second());
 }
 
 // sets the time using gps
 void SetTime() {
   int Year = gps.date.year();
-  byte Month = gps.date.month();
-  byte Day = gps.date.day();
+  int Month = gps.date.month();
+  int Day = gps.date.day();
 
-  byte Hour = gps.time.hour();
-  byte Minute = gps.time.minute();
-  byte Second = gps.time.second();
+  int Hour;
+  int HourPre = gps.time.hour();
 
-  setTime(Hour, Month, Second, Day, Month, Year);
-  adjustTime(-8 * SECS_PER_HOUR); // adjust for pst
+  if (HourPre < 8) {
+    Hour = 24 - (8 - HourPre);
+  } else {
+    Hour = HourPre - 8;
+  }
+
+  int Minute = gps.time.minute();
+  int Second = gps.time.second();
+  
+  setTime(Hour, Minute, Second, Day, Month, Year);
 }
 
 
