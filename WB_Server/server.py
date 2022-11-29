@@ -1,32 +1,55 @@
 import serial
 import serial.tools.list_ports
 import requests
+from pykafka import KafkaClient
+import json
+from datetime import datetime
+import uuid
+import time
 
-from prom_server import observe_payload, start_server
+from prom_server import observe_payload, start_server, observe_rssi
 
 print([comport.device for comport in serial.tools.list_ports.comports()])
 
-PORT = "COM3"
+PORT = "/dev/cu.usbserial-A10M58RQ"
 
 webhook_url = "https://discord.com/api/webhooks/1046204968971022346/B3S8yd6HqeaZAUVU9dkwyHTj5jLvlJSkW71mR-Q55n0wRcEQrBhNo2fY_HHVxRspXNmm"
 message_buffer = []
 
+client = KafkaClient(hosts="localhost:9092")
+topic = client.topics['coords']
+producer = topic.get_sync_producer()
+
+def generate_uuid():
+    return uuid.uuid4()
 
 
 def main_loop(port, baud):
     ser = serial.Serial(port = port, baudrate = baud)
-    start_server(8009)
 
+    loop_count = 0
+    
     while True:
+        if loop_count >= 5:
+            rssis = fetch_rssi(ser)
+            observe_rssi(rssis[0], rssis[1])
+            loop_count = 0
 
         if (line := ser.readline()):
-            if type(line) == bytes:
-                line = line.decode('utf-8')
+            try:
+                if type(line) == bytes:
+                    line = line.decode('utf-8')
+            except Exception as e:
+                print(line)
             
-            line = line.rstrip()
-            print(line)
-            parsed_data = parse_line(line)
-            observe_payload(parsed_data)            
+            if '{' in line:
+                line = line.rstrip()
+                print(line)
+                parsed_data = parse_line(line)
+                observe_payload(parsed_data)
+                #send_to_kafka(parsed_data)
+
+                loop_count += 1            
 
 
 def parse_line(line):
@@ -78,33 +101,50 @@ def parse_line(line):
             data[keys_list[i]] = 0.0
     
     return data
-    
 
 
-main_loop("COM3", 57600)
+def fetch_rssi(ser: serial.Serial):
+    start = time.time()
+    ser.read_all()
+    ser.write("+++".encode('utf-8'))
+    time.sleep(2)
+
+    ser.read_all()
+
+    ser.write("ATI7\r\n".encode('utf-8'))
+
+    ser.readline()
+
+    nl = False
+    while not nl:
+        if (res := ser.readline()):
+            res = res.decode('utf-8')
+            local, remote = res.split("RSSI: ")[-1].split(' ')[0].split('/')
+
+            return (int(local), int(remote))
+
+            nl = True
+
+    time.sleep(0.5)
+    ser.write("ATO\r\n".encode('utf-8'))
+    time.sleep(0.5)
+
+    ser.readline()
 
 
-while True:
-    line = ser.readline()
-    if (line):
-        if type(line) == bytes:
-            line = line.decode('utf-8')
+def send_to_kafka(data):
+    payload = {
+        "key": str(generate_uuid()),
+        "time": data["time"],
+        "latitude": float(data["latitude"]),
+        "longitude": float(data["longitude"])
+    }
 
-        print(line.rstrip())
-
-        message_buffer.append(line)
-    
-    if len(message_buffer) >= 6:
-        data = {
-            "content": "\n".join(message_buffer),
-            "username": "wb"
-        }
-
-        req = requests.post(webhook_url, json = data)
-
-        message_buffer = []
+    message = json.dumps(payload)
+    producer.produce(message.encode('ascii'))
 
 
-
+start_server(8009)
+main_loop(PORT, 57600)
 
     
