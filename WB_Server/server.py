@@ -16,14 +16,6 @@ PORT = "/dev/cu.usbserial-A10M58RQ"
 webhook_url = "https://discord.com/api/webhooks/1046204968971022346/B3S8yd6HqeaZAUVU9dkwyHTj5jLvlJSkW71mR-Q55n0wRcEQrBhNo2fY_HHVxRspXNmm"
 message_buffer = []
 
-client = KafkaClient(hosts="localhost:9092")
-topic = client.topics['coords']
-producer = topic.get_sync_producer()
-
-def generate_uuid():
-    return uuid.uuid4()
-
-
 def main_loop(port, baud):
     ser = serial.Serial(port = port, baudrate = baud)
 
@@ -102,7 +94,6 @@ def parse_line(line):
     
     return data
 
-
 def fetch_rssi(ser: serial.Serial):
     start = time.time()
     ser.read_all()
@@ -130,19 +121,6 @@ def fetch_rssi(ser: serial.Serial):
     time.sleep(0.5)
 
     ser.readline()
-
-
-def send_to_kafka(data):
-    payload = {
-        "key": str(generate_uuid()),
-        "time": data["time"],
-        "latitude": float(data["latitude"]),
-        "longitude": float(data["longitude"])
-    }
-
-    message = json.dumps(payload)
-    producer.produce(message.encode('ascii'))
-
 
 start_server(8009)
 main_loop(PORT, 57600)
