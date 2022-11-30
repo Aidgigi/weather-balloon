@@ -85,9 +85,6 @@ def observe_payload(d):
     tx_power_gauge.set(d["tx_power"])
 
     # radio
-    rssi_local_gauge.set(0)
-    rssi_remote_gauge.set(0)
-
     satellite_count.set(d["satellite_count"])
 
 

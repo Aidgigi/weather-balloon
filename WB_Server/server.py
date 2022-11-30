@@ -18,8 +18,7 @@ def main_loop(port, baud):
     
     while True:
         if loop_count >= 5:
-            rssis = fetch_rssi(ser)
-            observe_rssi(rssis[0], rssis[1])
+            fetch_rssi(ser)
             loop_count = 0
 
         if (line := ser.readline()):
@@ -115,10 +114,7 @@ def fetch_rssi(ser: serial.Serial):
 
     ser.readline()
 
-    print(int(local))
-    print(int(remote))
     observe_rssi(int(local), int(remote))
-    return (int(local), int(remote))
 
 start_server(8009)
 main_loop(PORT, 57600)
