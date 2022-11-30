@@ -115,8 +115,9 @@ def fetch_rssi(ser: serial.Serial):
 
     ser.readline()
 
-    print(local)
-    print(remote)
+    print(int(local))
+    print(int(remote))
+    observe_rssi(int(local), int(remote))
     return (int(local), int(remote))
 
 start_server(8009)
