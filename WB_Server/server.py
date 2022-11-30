@@ -107,8 +107,6 @@ def fetch_rssi(ser: serial.Serial):
             res = res.decode('utf-8')
             local, remote = res.split("RSSI: ")[-1].split(' ')[0].split('/')
 
-            return (int(local), int(remote))
-
             nl = True
 
     time.sleep(0.5)
@@ -116,6 +114,8 @@ def fetch_rssi(ser: serial.Serial):
     time.sleep(0.5)
 
     ser.readline()
+
+    return (int(local), int(remote))
 
 start_server(8009)
 main_loop(PORT, 57600)
