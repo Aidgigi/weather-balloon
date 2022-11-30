@@ -42,10 +42,12 @@ def parse_line(line):
     # outline data structure
     data = {
         "time": "",
+        "timestamp": "",
         "latitude": "",
         "longitude": "",
         "gps_altitude": "",
         "speed": "",
+        "v_speed": "",
         "course": "",
         "satellite_count": "",
         "x_angle": "",

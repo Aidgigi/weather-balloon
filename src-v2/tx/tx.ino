@@ -49,6 +49,7 @@ char lat_array[16];
 char lng_array[16];
 char alt_array[16];
 char spd_array[16];
+char vrt_array[16];
 char crs_array[16];
 
 char acc_x_array[16];
@@ -271,23 +272,25 @@ void SendTelemetry() {
   char payload[500];
   // time formatting
   char time_buffer[16];
+  char timestamp_buffer[64];
   GetTime(time_buffer);
-  sprintf(payload, "1:{%s}", time_buffer);
+  GetTimeStamp(timestamp_buffer);
+  sprintf(payload, "1:{%s}|2:{%s}", time_buffer, timestamp_buffer);
   // location formatting
   char loc_buffer[128];
-  sprintf(loc_buffer, "|2:{%s}|3:{%s}|4:{%s}|5:{%s}|6:{%s}|7:{%i}", lat_array, lng_array, alt_array, spd_array, crs_array, sats);
+  sprintf(loc_buffer, "|3:{%s}|4:{%s}|5:{%s}|6:{%s}|7:{%s}|8:{%s}|9:S{%i}", lat_array, lng_array, alt_array, spd_array, vrt_array, crs_array, sats);
   strcat(payload, loc_buffer);
   // orientation
   char angle_buffer[128];
-  sprintf(angle_buffer, "|8:{%s}|9:{%s}|10:{%s}|11:{%s}", angle_x_array, angle_y_array, angle_z_array, it_array);
+  sprintf(angle_buffer, "|10:{%s}|11:{%s}|12:{%s}|13:{%s}", angle_x_array, angle_y_array, angle_z_array, it_array);
   strcat(payload, angle_buffer);
   // weather
   char weather_buffer[128];
-  sprintf(weather_buffer, "|12:{%s}|13:{%s}|14:{%s}|15:{%s}", ot_array, p_array, hu_array, b_alt_array);
+  sprintf(weather_buffer, "|14:{%s}|15:{%s}|16:{%s}|17:{%s}", ot_array, p_array, hu_array, b_alt_array);
   strcat(payload, weather_buffer);
   // power
   char power_buffer[128];
-  sprintf(power_buffer, "|16:{%s}|17:{%s}|18:{%s}|19:{%s}|20:{%s}|21:{%s}", main_voltage_array, main_current_array, main_power_array, tx_voltage_array, tx_current_array, tx_power_array);
+  sprintf(power_buffer, "|18:{%s}|19:{%s}|20:{%s}|21:{%s}|22:{%s}|23:{%s}", main_voltage_array, main_current_array, main_power_array, tx_voltage_array, tx_current_array, tx_power_array);
   strcat(payload, power_buffer);
 
   Radio.println(payload);
@@ -314,7 +317,7 @@ void LogPosition() {
   TelToChars();
   GetTime(time_buffer);
 
-  sprintf(log_buffer, "%s,%s,%s,%s,%s,%s,%i", time_buffer, lat_array, lng_array, alt_array, spd_array, crs_array, sats);
+  sprintf(log_buffer, "%s,%s,%s,%s,%s,%s,%s,%i", time_buffer, lat_array, lng_array, alt_array, spd_array, vrt_array, crs_array, sats);
 
   positionFile.println(log_buffer);
 }
@@ -353,6 +356,7 @@ void TelToChars() {
   dtostrf(lng, 0, 6, lng_array);
   dtostrf(gpsAlt, 0, 2, alt_array);
   dtostrf(speed, 0, 2, spd_array);
+  dtostrf(vertical_speed, 0, 2, vrt_array);
   dtostrf(course, 0, 1, crs_array);
 
   dtostrf(accX, 0, 4, acc_x_array);
@@ -382,6 +386,11 @@ void TelToChars() {
 void GetTime(char* outBuffer) {
   memset(outBuffer, 0, sizeof(outBuffer));
   sprintf(outBuffer, "%02d:%02d:%02d",  hour(), minute(), second());
+}
+
+void GetTimeStamp(char* outBuffer) {
+  memset(outBuffer, 0, sizeof(outBuffer));
+  sprintf(outBuffer, "%lu", gps.time.value());
 }
 
 // sets the time using gps
@@ -534,7 +543,7 @@ void InitSD()
 
   statusFile.println("Type,Message,Value");
   attitudeFile.println("Time,AccX,AccY,AccZ,GyroX,GyroY,GyroZ,AngleX,AngleY,AngleZ,InternalTemp");
-  positionFile.println("Time,Lat,Lng,Alt,Speed,Course,Sats");
+  positionFile.println("Time,Lat,Lng,Alt,Speed,VSpeed,Course,Sats");
   weatherFile.println("Time,Temp,Pres,Hum,Alt");
   powerFile.println("Time,Battery,V,I,P");
 

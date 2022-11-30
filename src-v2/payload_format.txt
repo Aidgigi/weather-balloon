@@ -1,6 +1,6 @@
 Data payload
 
-Time,Lat,Lng,Alt1,Speed,Course,Sats,AngleX,AngleY,AngleZ,Intemp,Outtemp,Pressure,Humidity,Alt2,MV,MI,MP,TV,TI,TP
+Time,Timestamp,Lat,Lng,Alt1,Speed,VerticalSpeed,Course,Sats,AngleX,AngleY,AngleZ,Intemp,Outtemp,Pressure,Humidity,Alt2,MV,MI,MP,TV,TI,TP
 |1:{<time>}|,2:{<lat>}|,....
 
 
