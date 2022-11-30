@@ -56,7 +56,7 @@ def observe_payload(d):
 
     # guidance
     h_velocity = d["speed"]
-    v_velocity = 0
+    v_velocity = d["v_speed"]
 
     horizontal_velocity_gauge.set(h_velocity)
     #horizontal_velocity_histo.observe(h_velocity)
