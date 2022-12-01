@@ -430,9 +430,18 @@ void UpdateGPS() {
 
   // calculate vertical speed
   unsigned long current_millis = millis();
+  unsigned long delta_time = current_millis - t_last_altitude;
   float displacement = new_alt - gpsAlt;
-  unsigned long delta_time = current_millis - t_last_altitude; 
-  vertical_speed = displacement / delta_time;
+
+  if (displacement < 0)
+  {
+    displacement = -1.0 * displacement;
+  }
+
+  if (delta_time > 0UL && displacement > 0)
+  {
+    vertical_speed = displacement / float(delta_time / 1000.0);
+  }
 
   gpsAlt = new_alt;
   t_last_altitude = current_millis;
